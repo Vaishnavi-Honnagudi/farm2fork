@@ -13,27 +13,7 @@ from llm_narrative    import generate_narrative, generate_summary_badge
 from demo_data        import DEMO_PRODUCE
 from PIL import Image
 import pandas as pd
-# Auto-load report from QR code scan
-query_params = st.query_params
-if "batch_id" in query_params:
-    batch_id = query_params["batch_id"]
-    # Map batch_id to demo produce
-    batch_map = {
-        "TOM-KA-2024-001": "tomato",
-        "SPG-MH-2024-007": "leafy greens",
-        "RIC-AP-2024-012": "rice"
-    }
-    if batch_id in batch_map:
-        crop = batch_map[batch_id]
-        st.set_page_config(
-            page_title="Farm2Fork Traceability",
-            page_icon="🌾",
-            layout="wide",
-            initial_sidebar_state="expanded"
-        )
-        st.markdown("## 📱 QR Scan — Auto Loading Report")
-        run_pipeline(DEMO_PRODUCE[crop])
-        st.stop()
+
 st.set_page_config(
     page_title="Farm2Fork Traceability",
     page_icon="🌾",
@@ -72,23 +52,22 @@ def run_pipeline(farm_data: dict):
     try:
         narrative = generate_narrative(farm_data, compliance)
     except Exception as e:
-        narrative = f"[Narrative unavailable — check ANTHROPIC_API_KEY: {e}]"
+        narrative = f"[Narrative unavailable: {e}]"
 
     prog.progress(75, text="📄 Building DOCX report…")
     report_path = generate_report(
         farm_data, compliance, narrative,
-        output_dir="/home/claude/farm2fork/reports"
+        output_dir="reports"
     )
 
     prog.progress(90, text="📱 Generating QR code…")
     qr_path = generate_qr(
         farm_data, report_path,
-        output_dir="/home/claude/farm2fork/qrcodes"
+        output_dir="qrcodes"
     )
 
     prog.progress(100, text="✅ Done!")
 
-    # ── Summary metrics
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("Crop",       crop.title())
     c2.metric("Batch ID",   farm_data.get("batch_id", "—"))
@@ -104,7 +83,6 @@ def run_pipeline(farm_data: dict):
     risk_emoji = {"LOW": "🟢", "MEDIUM": "🟡", "HIGH": "🔴"}.get(badge["risk_level"], "⚪")
     st.markdown(f"**Risk Level:** {risk_emoji} {badge['risk_level']}")
 
-    # ── MRL Table
     with st.expander("🔬 FSSAI MRL Compliance Details", expanded=True):
         results = compliance.get("results", [])
         if results:
@@ -129,11 +107,9 @@ def run_pipeline(farm_data: dict):
         else:
             st.info("No pesticides to evaluate.")
 
-    # ── Narrative
     with st.expander("📖 AI-Generated Traceability Narrative", expanded=True):
         st.markdown(narrative)
 
-    # ── Downloads
     st.markdown("---")
     d1, d2, d3 = st.columns([2, 2, 1])
     with d1:
@@ -182,7 +158,6 @@ st.markdown('<p class="sub-title">FSSAI MRL Compliance · AI Narrative Reports �
 # ══════════════════════════════════════════════════════════════════
 if mode == "📋 Enter Farm Data":
     st.markdown("---")
-
     st.markdown('<p class="section-head">🏡 Farm & Batch Details</p>', unsafe_allow_html=True)
     c1, c2, c3 = st.columns(3)
     with c1:
@@ -203,7 +178,6 @@ if mode == "📋 Enter Farm Data":
     sow_date  = dc1.date_input("Sowing Date",  datetime.date.today() - datetime.timedelta(days=90))
     harv_date = dc2.date_input("Harvest Date", datetime.date.today())
 
-    # Fertilisers
     st.markdown('<p class="section-head">🧪 Fertilisers Applied</p>', unsafe_allow_html=True)
     num_fert = st.number_input("Number of fertilisers", 0, 8, 2, key="nf")
     fertilisers = []
@@ -221,7 +195,6 @@ if mode == "📋 Enter Farm Data":
         if fn:
             fertilisers.append({"name": fn, "quantity": fq, "date": str(fd), "method": fm})
 
-    # Pesticides
     st.markdown('<p class="section-head">☠️ Pesticides / Agrochemicals</p>', unsafe_allow_html=True)
     crop_key = crop.lower()
     avail    = list(FSSAI_MRL_DB.get(crop_key, {}).keys())
@@ -279,6 +252,18 @@ else:
         st.markdown("#### 🌾 Rice\nKrishna Dist., AP  \nBatch: RIC-AP-2024-012")
         if st.button("Generate Rice Report", use_container_width=True, key="demo_ric"):
             demo_choice = "rice"
+
+    # Auto-load from QR scan
+    query_params = st.query_params
+    if "batch_id" in query_params:
+        batch_map = {
+            "TOM-KA-2024-001": "tomato",
+            "SPG-MH-2024-007": "leafy greens",
+            "RIC-AP-2024-012": "rice"
+        }
+        scanned_batch = query_params["batch_id"]
+        if scanned_batch in batch_map:
+            demo_choice = batch_map[scanned_batch]
 
     if demo_choice:
         run_pipeline(DEMO_PRODUCE[demo_choice])
