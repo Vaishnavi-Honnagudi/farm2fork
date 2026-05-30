@@ -33,10 +33,10 @@ def generate_qr(farm_data: dict, report_path: str, output_dir: str = "qrcodes") 
         "report_file":   os.path.basename(report_path),
         "generated_at":  datetime.datetime.now().isoformat(),
         "fssai_check":   "Completed",
-        "verify_url":    f"https://farm2fork.in/verify/{batch_id}"
+        "verify_url":    f"https://farm2fork-r7iqqrbvwpq6xvx6rfvwkw.streamlit.app/?batch_id={batch_id}"
     }
 
-    qr_data = json.dumps(payload, indent=None, separators=(',', ':'))
+    qr_data = f"https://farm2fork-r7iqqrbvwpq6xvx6rfvwkw.streamlit.app/?batch_id={batch_id}"
 
     qr = qrcode.QRCode(
         version=3,
