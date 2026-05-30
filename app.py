@@ -142,7 +142,9 @@ with st.sidebar:
     st.markdown("### 🌾 Farm2Fork")
     st.markdown("**Standard:** FSSAI MRL 2011  \n**Version:** 1.0")
     st.markdown("---")
-    mode = st.radio("Mode", ["📋 Enter Farm Data", "🎯 Demo (3 Crops)"])
+    query_params = st.query_params
+    default_mode = 1 if "batch_id" in query_params else 0
+    mode = st.radio("Mode", ["📋 Enter Farm Data", "🎯 Demo (3 Crops)"], index=default_mode)
     st.markdown("---")
     st.markdown("**Supported Crops**")
     st.markdown("- 🍅 Tomato\n- 🥬 Leafy Greens\n- 🌾 Rice")
