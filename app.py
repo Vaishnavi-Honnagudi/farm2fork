@@ -13,7 +13,27 @@ from llm_narrative    import generate_narrative, generate_summary_badge
 from demo_data        import DEMO_PRODUCE
 from PIL import Image
 import pandas as pd
-
+# Auto-load report from QR code scan
+query_params = st.query_params
+if "batch_id" in query_params:
+    batch_id = query_params["batch_id"]
+    # Map batch_id to demo produce
+    batch_map = {
+        "TOM-KA-2024-001": "tomato",
+        "SPG-MH-2024-007": "leafy greens",
+        "RIC-AP-2024-012": "rice"
+    }
+    if batch_id in batch_map:
+        crop = batch_map[batch_id]
+        st.set_page_config(
+            page_title="Farm2Fork Traceability",
+            page_icon="🌾",
+            layout="wide",
+            initial_sidebar_state="expanded"
+        )
+        st.markdown("## 📱 QR Scan — Auto Loading Report")
+        run_pipeline(DEMO_PRODUCE[crop])
+        st.stop()
 st.set_page_config(
     page_title="Farm2Fork Traceability",
     page_icon="🌾",
